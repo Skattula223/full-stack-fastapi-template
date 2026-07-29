@@ -115,6 +115,7 @@ export type ValidationError = {
 
 export type ItemsReadItemsData = {
     limit?: number;
+    q?: string | null;
     skip?: number;
 };
 
