@@ -21,6 +21,11 @@ export const handleError = function (
   this(errorMessage)
 }
 
+export const getAvatarUrl = (avatarUrl?: string | null): string | undefined => {
+  if (!avatarUrl) return undefined
+  return `${import.meta.env.VITE_API_URL}${avatarUrl}`
+}
+
 export const getInitials = (name: string): string => {
   return name
     .split(" ")

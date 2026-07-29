@@ -1,7 +1,7 @@
 import uuid
 from typing import Any
 
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, UploadFile
 from sqlmodel import col, delete, func, select
 
 from app import crud
@@ -27,6 +27,20 @@ from app.models import (
 from app.utils import generate_new_account_email, send_email
 
 router = APIRouter(prefix="/users", tags=["users"])
+
+AVATAR_CONTENT_TYPES = {
+    "image/png": "png",
+    "image/jpeg": "jpg",
+    "image/webp": "webp",
+    "image/gif": "gif",
+}
+AVATAR_MAX_BYTES = 5 * 1024 * 1024
+
+
+def _delete_existing_avatar_files(user_id: uuid.UUID) -> None:
+    for extension in set(AVATAR_CONTENT_TYPES.values()):
+        existing = settings.AVATARS_DIR / f"{user_id}.{extension}"
+        existing.unlink(missing_ok=True)
 
 
 @router.get(
@@ -126,6 +140,49 @@ def read_user_me(current_user: CurrentUser) -> Any:
     """
     Get current user.
     """
+    return current_user
+
+
+@router.post("/me/avatar", response_model=UserPublic)
+async def upload_avatar(
+    *, session: SessionDep, current_user: CurrentUser, file: UploadFile
+) -> Any:
+    """
+    Upload (or replace) the current user's avatar image.
+    """
+    extension = AVATAR_CONTENT_TYPES.get(file.content_type or "")
+    if not extension:
+        raise HTTPException(
+            status_code=400,
+            detail="Unsupported image type. Use PNG, JPEG, WEBP, or GIF.",
+        )
+
+    contents = await file.read()
+    if len(contents) > AVATAR_MAX_BYTES:
+        raise HTTPException(status_code=400, detail="Image must be 5MB or smaller")
+
+    settings.AVATARS_DIR.mkdir(parents=True, exist_ok=True)
+    _delete_existing_avatar_files(current_user.id)
+    avatar_path = settings.AVATARS_DIR / f"{current_user.id}.{extension}"
+    avatar_path.write_bytes(contents)
+
+    current_user.avatar_url = f"/static/avatars/{avatar_path.name}"
+    session.add(current_user)
+    session.commit()
+    session.refresh(current_user)
+    return current_user
+
+
+@router.delete("/me/avatar", response_model=UserPublic)
+def delete_avatar(*, session: SessionDep, current_user: CurrentUser) -> Any:
+    """
+    Remove the current user's avatar image.
+    """
+    _delete_existing_avatar_files(current_user.id)
+    current_user.avatar_url = None
+    session.add(current_user)
+    session.commit()
+    session.refresh(current_user)
     return current_user
 
 

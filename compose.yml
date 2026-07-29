@@ -88,6 +88,8 @@ services:
         restart: true
       prestart:
         condition: service_completed_successfully
+    volumes:
+      - avatar-data:/app/backend/app/static/avatars
     env_file:
       - .env
     environment:
@@ -167,6 +169,7 @@ services:
       - traefik.http.routers.${STACK_NAME?Variable not set}-frontend-http.middlewares=https-redirect
 volumes:
   app-db-data:
+  avatar-data:
 
 networks:
   traefik-public:

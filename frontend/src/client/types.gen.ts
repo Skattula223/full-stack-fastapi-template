@@ -9,6 +9,10 @@ export type Body_login_login_access_token = {
     client_secret?: (string | null);
 };
 
+export type Body_users_upload_avatar = {
+    file: (Blob | File);
+};
+
 export type HTTPValidationError = {
     detail?: Array<ValidationError>;
 };
@@ -76,6 +80,7 @@ export type UserPublic = {
     is_superuser?: boolean;
     full_name?: (string | null);
     id: string;
+    avatar_url?: (string | null);
     created_at?: (string | null);
 };
 
@@ -192,6 +197,14 @@ export type UsersCreateUserData = {
 export type UsersCreateUserResponse = (UserPublic);
 
 export type UsersReadUserMeResponse = (UserPublic);
+
+export type UsersUploadAvatarData = {
+    formData: Body_users_upload_avatar;
+};
+
+export type UsersUploadAvatarResponse = (UserPublic);
+
+export type UsersDeleteAvatarResponse = (UserPublic);
 
 export type UsersDeleteUserMeResponse = (Message);
 
